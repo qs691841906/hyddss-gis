@@ -1,0 +1,1657 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sinosoft.ddss.dataDao.MetadataQueryMapper">
+	<resultMap id="BaseResultMap" type="com.sinosoft.ddss.common.entity.Metadata">
+		<result column="id"  property="id" />
+		<result column="data_id"  property="dataId" />
+		<result column="scene_id"  property="sceneId" />
+		<result column="instance_id"  property="instanceId" />
+		<result column="product_name"  property="productName" />
+		<result column="file_name"  property="fileName" />
+		<result column="satellite"  property="satellite" />
+		<result column="sensor" property="sensor" />
+		<result column="spatial_resolution" 
+			property="spatialResolution" />
+		<result column="orbit_cycle"  property="orbitCycle" />
+		<result column="orbit_pass"  property="orbitPass" />
+		<result column="orbit_id"  property="orbitId" />
+		<result column="product_level"  property="productLevel" />
+		<result column="product_format"  property="productFormat" />
+		<result column="cloud_percent"  property="cloudPercent" />
+		<result column="product_version"  property="productVersion" />
+		<result column="produce_time"  property="produceTime" />
+		<result column="time_zone"  property="timeZone" />
+		<result column="time_type"  property="timeType" />
+		<result column="earth_ellipsoid"  property="earthEllipsoid" />
+		<result column="project_type"  property="projectType" />
+		<result column="start_time"  property="startTime" />
+		<result column="end_time"  property="endTime" />
+		<result column="image_boundary"  property="imageBoundary" />
+		<result column="top_left_latitude"  property="topLeftLatitude" />
+		<result column="top_left_longitude" 
+			property="topLeftLongitude" />
+		<result column="top_right_latitude" 
+			property="topRightLatitude" />
+		<result column="top_right_longitude" 
+			property="topRightLongitude" />
+		<result column="bottom_right_latitude" 
+			property="bottomRightLatitude" />
+		<result column="bottom_right_longitude" 
+			property="bottomRightLongitude" />
+		<result column="bottom_left_latitude" 
+			property="bottomLeftLatitude" />
+		<result column="bottom_left_longitude" 
+			property="bottomLeftLongitude" />
+			
+		<result column="image_start_time"  property="imageStartTime" />
+		<result column="image_end_time"  property="imageEndTime" />
+		<result column="rep_download_add"  property="repDownloadAdd" />
+		<result column="receive_station"  property="receiveStation" />
+		<result column="thumb_file_url"  property="thumbFileUrl" />
+		<result column="quick_file_url"  property="quickFileUrl" />
+		<result column="is_delete"  property="isDelete" />
+		<result column="data_size"  property="dataSize" />
+		<result column="imaging_mode"  property="imagingMode" />
+		
+	</resultMap>
+
+	<sql id="BaseMapQuery">
+		 dm.id,
+		 dm.data_id,
+		 dm.scene_id,
+		 dm.instance_id,
+		 dm.product_name,
+		 dm.file_name,
+		 dm.satellite,
+		 dm.sensor,
+		 dm.spatial_resolution,
+		 dm.orbit_cycle,
+		 dm.orbit_pass,
+		 dm.orbit_id,
+		 dm.product_level,
+		 dm.product_format,
+		 dm.cloud_percent,
+		 dm.product_version,
+		 to_char(dm.produce_time, 'yyyy/MM/dd HH24:mi:ss') produce_time,
+		 dm.time_zone,
+		 dm.time_type,
+		 dm.earth_ellipsoid,
+		 dm.project_type,
+		 to_char(dm.image_start_time, 'yyyy/MM/dd HH24:mi:ss') image_start_time,
+		 to_char(dm.image_end_time, 'yyyy/MM/dd HH24:mi:ss') image_end_time,
+		 dm.image_boundary,
+		 dm.top_left_latitude,
+		 dm.top_left_longitude,
+		 dm.top_right_latitude,
+		 dm.top_right_longitude,
+		 dm.bottom_right_latitude,
+		 dm.bottom_right_longitude,
+		 dm.bottom_left_latitude,
+		 dm.bottom_left_longitude,
+		 dm.receive_station,
+		 dm.rep_download_add,
+		 to_char(dm.create_time, 'yyyy/MM/dd HH24:mi:ss') create_time,
+		 st_astext (dm.geom) AS geom,
+		 dm.quality_grade,
+		 dm.data_size,
+		 dm.receive_station,
+		 dm.thumb_file_url,
+		 dm.quick_file_url,
+		 dm.is_delete,
+		 dm.imaging_mode
+	</sql>
+	<select id="queryFromPloygon" resultMap="BaseResultMap">
+		SELECT
+		*
+		FROM
+		ddss_metadata
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<!-- sensor -->
+	    	<if test="arg1 != null and arg1 != ''">
+				AND sensor = #{arg1}
+			</if>
+			<!-- startTime -->
+			<if test="arg4 != null and arg4 != ''">
+				AND to_timestamp(#{arg4}, 'yyyy-mm-dd HH24:mi:ss') &lt;=
+				start_time
+			</if>
+			<!-- endTime -->
+			<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+				AND to_timestamp(#{arg5}, 'yyyy-mm-dd HH24:mi:ss') &lt;=
+			 	end_time
+			</if>
+			<!-- satellite -->
+			<if test="arg6 != null and arg6 != ''">
+				AND satellite = #{arg6}
+			</if>
+			<!-- productLevel -->
+			<if test="arg7 != null and arg7 != ''">
+				AND product_level = #{arg7}
+			</if>
+			<!-- cloudCoverage -->
+			<if test="arg8 != null and arg8 != ''">
+				AND cloud_percent = #{arg1}
+			</if>
+			<if test="arg0 != null and arg0 != ''">
+				and ST_Intersects (
+					geoms,
+					st_geometryfromtext (#{arg0},4326))
+			</if>
+	    </trim>
+	    <choose>
+			<when test="arg9 != null and arg9 != ''">
+				<if test="arg10 == 1">
+					ORDER BY ${arg9} ASC,id DESC
+				</if>
+				<if test="arg10 != 1">
+					ORDER BY ${arg9} DESC,id DESC
+				</if>
+			</when>
+			<otherwise>
+				<if test="arg10 == 1">
+					ORDER BY produce_time ASC
+				</if>
+				<if test="arg10 != 1">
+					ORDER BY produce_time DESC
+				</if>
+			</otherwise>
+		</choose>
+		<if	test="arg2 != null and arg2 > 0 and arg3 != null">
+			<![CDATA[limit #{arg2} offset #{arg3}]]>
+		</if>
+	</select>
+
+	<select id="queryFromDistrict" resultMap="BaseResultMap">
+		SELECT
+		T.*
+		FROM
+		ddss_metadata T,
+		<choose>
+			<when test="arg0=='city'">
+				city D
+			</when>
+			<when test="arg0=='town'">
+				town D
+			</when>
+			<when test="arg0=='province'">
+				province D
+			</when>
+			<when test="arg0=='world'">
+				world D
+			</when>
+			<otherwise>
+				world D
+			</otherwise>
+		</choose>
+		WHERE
+		T .sensor = #{arg2}
+		AND st_intersects (
+		geoms, D .geom4326)
+		AND D
+		.gid = #{arg1};
+	</select>
+
+	<select id="queryFromCircle" resultMap="BaseResultMap">
+		SELECT
+		*
+		FROM
+		ddss_metadata
+		WHERE sensor = #{arg2} AND
+		ST_Intersects (
+		geoms,
+		ST_Transform (
+		ST_Buffer
+		(
+		ST_Transform (
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		),
+		26986
+		),
+		#{arg1},
+		'quad_segs=8'
+		),
+		4326
+		)
+		);
+	</select>
+	
+	
+	<select id="queryFromCircleCount" resultType="java.lang.Integer">
+		SELECT
+		count(1)
+		FROM
+		ddss_metadata
+		WHERE sensor = #{arg2} AND
+		ST_Intersects (
+		geoms,
+		ST_Transform (
+		ST_Buffer
+		(
+		ST_Transform (
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		),
+		26986
+		),
+		#{arg1},
+		'quad_segs=8'
+		),
+		4326
+		)
+		);
+	</select>
+	
+	<select id="getMetaDataCount" resultType="java.lang.Integer">
+		SELECT
+		count(1)
+		FROM
+		ddss_metadata
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+	    	<if test="arg1 != null and arg1 != ''">
+				AND sensor = #{arg1}
+			</if>
+			<!-- startTime -->
+			<if test="arg2 != null and arg2 != ''">
+				AND to_timestamp(#{arg2}, 'yyyy-mm-dd HH24:mi:ss') &lt;=
+				start_time
+			</if>
+			<!-- endTime -->
+			<if test="arg3 != null and arg3 != ''">
+				AND to_timestamp(#{arg3}, 'yyyy-mm-dd HH24:mi:ss') &lt;=
+			 	end_time
+			</if>
+			<!-- satellite -->
+			<if test="arg4 != null and arg4 != ''">
+				AND satellite = #{arg4}
+			</if>
+			<!-- productLevel -->
+			<if test="arg5 != null and arg5 != ''">
+				AND product_level = #{arg5}
+			</if>
+			<!-- cloudCoverage -->
+			<if test="arg6 != null and arg6 != ''">
+				AND cloud_percent = #{arg6}
+			</if>
+			<!-- <if test="arg0 != null and arg0 != ''">
+				AND ST_Intersects (
+					geom,
+					st_geometryfromtext (
+					#{arg0},
+					4326
+					)
+					)
+			</if> -->
+			<if test="arg0 != null and arg0 != ''">
+				and ST_Intersects (
+					geoms,
+					st_geometryfromtext (#{arg0},4326))
+			</if>
+	    </trim>
+	</select>
+	<select id="mapQuery" resultMap="BaseResultMap">
+		SELECT
+		 <include refid="BaseMapQuery"/>
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+				
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			${arg3}
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade <= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<!-- <if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8}) 
+		</if> -->
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level = #{arg9}
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id= #{arg11}
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		<if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle<= #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent<= #{arg18}]]>
+		</if>
+		and dm.is_delete = 2
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+		<choose>
+			<when test="arg24 != null and arg24 != ''">
+				<if test="arg25 == 1">
+					ORDER BY ${arg24} ASC
+				</if>
+				<if test="arg25 != 1">
+					ORDER BY ${arg24} DESC
+				</if>
+			</when>
+			<otherwise>
+				<if test="arg25 == 1">
+					ORDER BY data_id ASC
+				</if>
+				<if test="arg25 != 1">
+					ORDER BY data_id DESC
+				</if>
+			</otherwise>
+		</choose>
+		LIMIT #{arg23} OFFSET #{arg26};
+	</select>
+	<!-- 传感器单选查询数据 -->
+	<select id="mapQuerySensor" resultMap="BaseResultMap">
+		SELECT
+		 <include refid="BaseMapQuery"/>
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+				
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			and dm.satellite in (${arg3})
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade <= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<if test="arg8 != null and arg8 != ''">
+			and dm.sensor in (${arg8}) 
+		</if>
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level in (${arg9})
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id in (${arg11})
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name in(${arg12})
+		</if>
+		
+		<if test="arg31 ==0">
+			<![CDATA[and dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg31 ==1">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+		</if>
+		<if test="arg31 ==2">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle> #{arg13}]]>
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>)
+		</if>
+		
+		<!-- <if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle<= #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if> -->
+		
+		
+		
+		
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent<= #{arg18}]]>
+		</if>
+		<if test="arg27 != -1">
+			and dm.is_delete = 2
+		</if>
+		<if test="arg28 != null">
+			and dm.data_id= #{arg28}
+		</if>
+		<if test="arg29 != 1">
+			and dm.is_sensitive= 0
+		</if>
+		<if test="arg30 != null and arg30 != ''">
+			and dm.imaging_mode in (${arg30})
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		
+			<if test="arg19!='' and arg19!=null and arg19!=2 ">
+				and (
+			</if>
+			<if test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					  ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</if>
+			
+			<if test="arg19==3 ">
+				 ST_Intersects (geoms, D.geom4326)
+			</if>
+			<if test="arg19==4 ">
+				 ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</if>
+			<if test="arg32 !=null and arg32 !='' ">
+				${arg32}
+			</if>
+			<if test="arg19!='' and arg19!=null  and arg19!=2 ">
+				)
+			</if>
+			
+			<if test="arg19==2 and arg20 != null and arg20 != ''">
+			and(
+					 ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+			)
+			</if>
+		
+		
+<!-- 		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					  ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					 ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				 ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				 ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg24 != null and arg24 != ''">
+				<if test="arg25 == 1">
+					ORDER BY ${arg24} ASC
+				</if>
+				<if test="arg25 != 1">
+					ORDER BY ${arg24} DESC
+				</if>
+			</when>
+			<otherwise>
+				<if test="arg25 == 1">
+					ORDER BY data_id ASC
+				</if>
+				<if test="arg25 != 1">
+					ORDER BY data_id DESC
+				</if>
+			</otherwise>
+		</choose>
+		LIMIT #{arg23} OFFSET #{arg26};
+	</select>
+	
+	<select id="mapQueryCount" resultType="java.lang.Integer">
+		SELECT
+		COUNT (1) COUNT,
+		SUM (data_size) SUM
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			${arg3}
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade<= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<!-- <if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8})
+		</if> -->
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level = #{arg9}
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id= #{arg11}
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		<if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle<= #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent<= #{arg18}]]>
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+	</select>
+	
+	<!-- 传感器单选查询数据量 -->
+	<select id="mapQueryCountSensor" resultType="java.lang.Integer">
+		SELECT
+		COUNT (1) COUNT,
+		SUM (data_size) SUM
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			and dm.satellite in (${arg3})
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade<= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8})
+		</if>
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level in (${arg9})
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id in (${arg11})
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name in(${arg12})
+		</if>
+		
+		
+		<if test="arg25 ==0">
+			<![CDATA[and dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg25 ==1">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+		</if>
+		<if test="arg25 ==2">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle> #{arg13}]]>
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>)
+		</if>
+		
+		
+		<!-- <if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle<= #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if> -->
+		
+		
+		
+		
+		
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent<= #{arg18}]]>
+		</if>
+		<if test="arg22 != -1">
+			and dm.is_delete = 2
+		</if>
+		<if test="arg23 != 1">
+			and dm.is_sensitive = 0
+		</if>
+		<if test="arg24 != null and arg24 != ''">
+			and dm.imaging_mode in (${arg24}) 
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<if test="arg19!='' and arg19!=null and arg19!=2">
+				and (
+			</if>
+			<if test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					  ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</if>
+			<!-- <if test="arg19==2 and arg20 != null and arg20 != ''">
+					 ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+			</if> -->
+			<if test="arg19==3 ">
+				 ST_Intersects (geoms, D.geom4326)
+			</if>
+			<if test="arg19==4 ">
+				 ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</if>
+			<if test="arg26 !=null and arg26 !='' ">
+				${arg26}
+			</if>
+			<if test="arg19!='' and arg19!=null and arg19!=2">
+				)
+			</if>
+			
+			<if test="arg19==2 and arg20 != null and arg20 != ''">
+			and(
+					 ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+			)
+			</if>
+		
+<!-- 		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+	</select>
+	
+	<select id="GetByDataId" resultMap="BaseResultMap" parameterType="java.util.List">
+		SELECT
+		id, data_id, scene_id, instance_id, product_name, file_name, 
+       satellite, sensor, spatial_resolution, orbit_cycle, orbit_pass, 
+       orbit_id, product_level, product_format, cloud_percent, product_version, 
+       to_char(produce_time, 'yyyy/MM/dd HH24:mi:ss') produce_time, time_zone, time_type, earth_ellipsoid, project_type, 
+       to_char(image_start_time, 'yyyy/MM/dd HH24:mi:ss') image_start_time, 
+       to_char(image_end_time, 'yyyy/MM/dd HH24:mi:ss') image_end_time, image_boundary, top_left_latitude, 
+       top_left_longitude, top_right_latitude, top_right_longitude, 
+       bottom_right_latitude, bottom_right_longitude, bottom_left_latitude, 
+       bottom_left_longitude, receive_station, rep_download_add, create_time, 
+       st_astext (geom) as geom, quality_grade, data_size
+		FROM
+		ddss_metadata
+		
+		where data_id in
+		<foreach collection="list"  index="index" item="item" open="(" separator="," close=")"  >
+       #{item}
+      </foreach>
+		
+	</select>
+	
+	
+	
+	<select id="GpoupSatelliteSensorProductLevel" resultMap="BaseResultMap" parameterType="java.util.List">
+		SELECT
+		${arg22}
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where ${arg22} is not null
+				<if test="arg1 != null and arg1 != ''">
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where ${arg22} is not null
+				<if test="arg1 != null and arg1 != ''">
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where ${arg22} is not null
+				<if test="arg2 != null and arg2 != ''">
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+			<otherwise>
+				where ${arg22} is not null
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			and dm.satellite in(#{arg3})
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade<= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8})
+		</if>
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level in(${arg9})
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id= #{arg11}
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		<if test="arg13 != null and arg13 != ''">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null and arg14 != ''">
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>
+		</if>
+		<if test="arg15 != null and arg15 != ''">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null and arg16 != ''">
+			<![CDATA[and dm.orbit_pass< #{arg16}]]>
+		</if>
+		<if test="arg17 != null and arg17 != ''">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null and arg18 != ''">
+			<![CDATA[and dm.cloud_percent< #{arg18}]]>
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+		group by ${arg22}
+		order by ${arg22}
+	</select>
+	<select id="mapQueryCountSum" resultType="map">
+		SELECT
+		COUNT (1) COUNT,
+		SUM (data_size) SUM
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			${arg3}
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade<= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<!-- <if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8})
+		</if> -->
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level = #{arg9}
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id= #{arg11}
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		<if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass< #{arg16}]]>
+		</if>
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent< #{arg18}]]>
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+	</select>
+	
+	<select id="mapQueryCountSumSensor" resultType="map">
+		SELECT
+		COUNT (1) COUNT,
+		SUM (data_size) SUM
+		FROM
+		ddss_metadata dm
+		<choose>
+			<when test="arg0=='city'">
+				,city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (dm.geom, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				,province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (dm.geom, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				,places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			and satellite in (${arg3})
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade<= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<if test="arg8 != null and arg8 != ''">
+			and dm.sensor in(${arg8})
+		</if>
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level in (${arg9})
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id in (${arg11})
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		
+		<if test="arg23 ==0">
+			<![CDATA[and dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg23 ==1">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+		</if>
+		<if test="arg23 ==2">
+			and
+			(<![CDATA[ dm.orbit_cycle = #{arg13}]]>
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle = #{arg14}]]>
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>)
+			or
+			(<![CDATA[ dm.orbit_cycle> #{arg13}]]>
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>)
+		</if>
+		
+		<!-- <if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle< #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass< #{arg16}]]>
+		</if> -->
+		
+		
+		
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent< #{arg18}]]>
+		</if>
+		
+		<if test="arg22 != null and arg22 != ''">
+			and dm.imaging_mode in(${arg22})
+		</if>
+		<!-- <choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geom,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (geom,st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (dm.geom, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(dm.geom, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose> -->
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+	</select>
+	
+	
+	
+	
+		<!-- 传感器单选查询数据 -->
+	<update id="updateDataStatusByMapQuery" >
+		update
+		ddss_metadata dm
+		set is_delete = #{arg27}
+		<choose>
+			<when test="arg0=='city'">
+				from city D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='province'">
+				from province D
+				where 1=1
+				<if test="arg1 != null and arg1 != ''">
+					and st_intersects (geoms, D.geom4326)
+					and D.gid=#{arg1}
+				</if>
+			</when>
+			<when test="arg0=='places'">
+				from places D
+				where 1=1
+				<if test="arg2 != null and arg2 != ''">
+					and st_intersects (geoms, D.geom)
+					and D.name_chn= #{arg2}
+				</if>
+			</when>
+				
+			<otherwise>
+				where 1=1
+			</otherwise>
+		</choose>
+		<if test="arg3 != null and arg3 != ''">
+			and dm.satellite in (${arg3})
+		</if>
+		<if test="arg4 != null and arg4 != ''">
+			<![CDATA[and dm.quality_grade <= #{arg4}]]>
+		</if>
+		<if test="arg5 != null and arg5 != '' and arg6 != null and arg6 != '' and arg7 != null and arg7 != ''">
+			<![CDATA[
+			AND (
+					(
+						dm.image_end_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_end_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+					OR (
+						dm.image_start_time >= to_timestamp(
+							#{arg6},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+						AND dm.image_start_time <= to_timestamp(
+							#{arg7},
+							'yyyy-MM-dd HH24:mi:ss'
+						)
+					)
+				)]]>
+		</if>
+		<if test="arg8 != null and arg8 != ''">
+			and dm.sensor in (${arg8}) 
+		</if>
+		<if test="arg9 != null and arg9 != ''">
+			and dm.product_level in (${arg9})
+		</if>
+		<if test="arg10 != null and arg10 != ''">
+			and dm.product_format= #{arg10}
+		</if>
+		<if test="arg11 != null and arg11 != ''">
+			and dm.orbit_id= #{arg11}
+		</if>
+		<if test="arg12 != null and arg12 != ''">
+			and dm.product_name= #{arg12}
+		</if>
+		<if test="arg13 != null">
+			<![CDATA[and dm.orbit_cycle>= #{arg13}]]>
+		</if>
+		<if test="arg14 != null">
+			<![CDATA[and dm.orbit_cycle<= #{arg14}]]>
+		</if>
+		<if test="arg15 != null">
+			<![CDATA[and dm.orbit_pass>= #{arg15}]]>
+		</if>
+		<if test="arg16 != null">
+			<![CDATA[and dm.orbit_pass<= #{arg16}]]>
+		</if>
+		<if test="arg17 != null">
+			<![CDATA[and dm.cloud_percent>= #{arg17}]]>
+		</if>
+		<if test="arg18 != null">
+			<![CDATA[and dm.cloud_percent<= #{arg18}]]>
+		</if>
+		
+		<choose>
+			<when test="arg19==1 ">
+				<if test="arg20 != null and arg20 != '' and arg21 != null and arg21 != ''">
+					 and ST_Intersects (geoms,ST_Transform (ST_Buffer (ST_Transform (ST_GeomFromText (#{arg20}, 4326),26986),#{arg21}, 'quad_segs=8'),4326))
+				</if>
+			</when>
+			<when test="arg19==2 ">
+				<if test="arg20 != null and arg20 != ''">
+					and ST_Intersects (
+						geoms,
+						st_geometryfromtext (#{arg20},4326))
+				</if>
+			</when>
+			<when test="arg19==3 ">
+				and ST_Intersects (geoms, D.geom4326)
+			</when>
+			<when test="arg19==4 ">
+				and ST_Contains(geoms, st_geometryfromtext('POINT(${arg20})',4326))
+			</when>
+		</choose>
+		
+	
+	</update>
+	
+	
+	
+	
+	
+	
+</mapper>

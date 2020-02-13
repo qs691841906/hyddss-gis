@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sinosoft.ddss.dataDao.GeoMapper">
+
+	<resultMap id="BaseResultMap" type="com.sinosoft.ddss.model.GlobalData">
+		<result column="query_area" jdbcType="NUMERIC" property="queryArea" />
+		<result column="intersection_area" jdbcType="NUMERIC" property="intersectionArea" />
+		<result column="union_area" jdbcType="NUMERIC" property="unionArea" />
+		<result column="geom_str" jdbcType="VARCHAR" property="geomStr" />
+		<result column="count" jdbcType="INTEGER" property="count" />
+	</resultMap>
+	
+	<resultMap id="ResultPlaceMap" type="com.sinosoft.ddss.model.Place">
+			<result column="gid"  property="gid" />
+			<result column="objectid"  property="objectid" />
+			<result column="name_chn" property="namechn" />
+			<result column="code" property="code" />
+			<result column="name_eng" property="nameeng" />
+	</resultMap>
+
+	<sql id="BasePlace">
+		gid,objectid,name_chn,code,name_eng
+	</sql>
+	<select id="getArea" resultType="java.math.BigDecimal">
+		SELECT
+		ST_Area (
+		ST_GeographyFromText (
+		'POLYGON((${metadata.topLeftLongitude}
+		${metadata.topLeftLatitude},${metadata.topRightLongitude}
+		${metadata.topRightLatitude},${metadata.bottomRightLongitude}
+		${metadata.bottomRightLatitude},${metadata.bottomLeftLongitude}
+		${metadata.bottomLeftLatitude},${metadata.topLeftLongitude}
+		${metadata.topLeftLatitude}))'
+		)
+		) / (1000 *
+		1000) AS
+		area;
+	</select>
+
+	<select id="getAreaFromPloygon" resultType="java.math.BigDecimal">
+		SELECT
+		ST_Area (
+		ST_GeographyFromText (#{arg0}
+		)
+		) / (1000 *
+		1000) AS
+		area;
+	</select>
+
+	<select id="getDistance" resultType="java.math.BigDecimal">
+		SELECT
+		st_distance (
+		ST_GeographyFromText (
+		#{arg0}
+		),
+		ST_GeographyFromText (
+		#{arg1}
+		)
+		)
+	</select>
+
+	<select id="getDistrictPloygon" resultType="java.lang.String">
+		SELECT
+		st_astext (geom4326) AS geomstr
+		FROM
+		<choose>
+			<when test="arg0=='city'">
+				city D
+			</when>
+			<when test="arg0=='town'">
+				town D
+			</when>
+			<when test="arg0=='province'">
+				province D
+			</when>
+			<when test="arg0=='world'">
+				world D
+			</when>
+			<otherwise>
+				world D
+			</otherwise>
+		</choose>
+		WHERE
+		gid = #{arg1};
+	</select>
+	
+ 	<select id="getPlaceByCode" resultMap="ResultPlaceMap">
+		<!-- SELECT
+		<include refid="BasePlace" />
+		FROM
+		<choose>
+			<when test="arg0=='city'">
+				city D
+			</when>
+			<when test="arg0=='town'">
+				town D
+			</when>
+			<when test="arg0=='province'">
+				province D
+			</when>
+			<when test="arg0=='world'">
+				world D
+			</when>
+			<otherwise>
+				province D
+			</otherwise>
+		</choose>
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+	    	<if test="arg2 != null and arg2 != ''">
+				AND code like '${arg2}' || '%'
+			</if>
+			<if test="arg3 != null and arg3 != 'letter'">
+				AND name_eng like '${arg3}' || '%'
+			</if>
+	    </trim>
+	    <choose>
+	    	<when test="arg3 != null and arg3 != ''">
+				order by D.gid
+			</when>
+			<otherwise>
+				order by D.gid
+			</otherwise>
+	    </choose> -->
+	    
+	    select <include refid="BasePlace" /> from 
+			(
+			select 
+			<include refid="BasePlace" /> ,
+			case when name_eng = 'CHINA' then '0' else name_eng end as _name_eng,
+			case when name_eng = 'CHINA' then '0' else name_py end as _name_py
+			from <choose>
+						<when test="arg0=='city'">
+							city 
+						</when>
+						<when test="arg0=='town'">
+							town 
+						</when>
+						<when test="arg0=='province'">
+							province 
+						</when>
+						<when test="arg0=='world'">
+							world 
+						</when>
+						<otherwise>
+							province 
+						</otherwise>
+					</choose> 
+					
+					<trim prefix="WHERE" prefixOverrides="AND | OR">
+				    	<if test="arg2 != null and arg2 != ''">
+							AND code like '${arg2}' || '%'
+						</if>
+						<if test="arg3 != null and arg3 != 'zh' and arg3 != 'en'">
+							AND name_eng like '${arg3}' || '%'
+						</if>
+				    </trim>
+			)a  
+	
+
+	<choose>
+	    	<when test="arg3 != null and arg3 = 'zh'">
+				order by _name_py
+			</when>
+			<otherwise>
+				order by _name_eng
+			</otherwise>
+	    </choose>
+	    
+	</select>
+
+	<select id="getGlobalDataFromDistrict" resultMap="BaseResultMap">
+		SELECT
+		D.shape_area AS query_area,
+		st_area (
+		st_geographyfromtext (
+		st_astext (
+		ST_Intersection (
+		ST_Union (T .geom),
+		D.geom4326
+		)
+		)
+		)
+		) AS
+		intersection_area,
+		st_area (
+		st_geographyfromtext (
+		st_astext (ST_Union(T
+		.geom))
+		)
+		) AS union_area,
+		<!-- st_astext ( -->
+		<!-- ST_Intersection ( -->
+		<!-- ST_Union (T -->
+		<!-- .geom), -->
+		<!-- D.geom4326 -->
+		<!-- ) -->
+		<!-- ) AS geom_str, -->
+		st_astext (
+		ST_Union (T
+		.geom)
+		) AS
+		geom_str,
+		COUNT
+		(1)
+		FROM
+		ddss_metadata T,
+		<choose>
+			<when test="arg0=='city'">
+				city D
+			</when>
+			<when test="arg0=='town'">
+				town D
+			</when>
+			<when test="arg0=='province'">
+				province D
+			</when>
+			<when test="arg0=='world'">
+				world D
+			</when>
+			<otherwise>
+				world D
+			</otherwise>
+		</choose>
+		WHERE
+		T .sensor = #{arg2}
+		AND st_intersects (T .geom, D.geom4326)
+		AND
+		D.gid = #{arg1}
+		GROUP BY
+		D.gid,
+		D.geom4326,
+		D.shape_area;
+
+	</select>
+
+	<select id="getGlobalDataFromPloygon" resultMap="BaseResultMap">
+		SELECT
+		st_area (
+		ST_GeographyFromText (
+		#{arg0}
+		)
+		) / (1000 * 1000) AS query_area,
+		ST_Area
+		(
+		ST_GeographyFromText (
+		st_astext (
+		ST_Intersection (
+		ST_Union
+		(geom),
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		)
+		)
+		)
+		)
+		) / (1000 * 1000) AS
+		intersection_area,
+		ST_Area (
+		ST_GeographyFromText
+		(st_astext(ST_Union(geom)))
+		) / (1000 * 1000) AS
+		union_area,
+		st_astext
+		(ST_Union(geom)) AS geom_str,
+		COUNT (1)
+		FROM
+		ddss_metadata
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+	    	<if test="arg1 != null and arg1 != ''">
+				AND sensor = #{arg1}
+			</if>
+			<if test="arg0 != null and arg0 != ''">
+				AND ST_Intersects (
+				geoms,
+				st_geometryfromtext (
+				#{arg0},
+				4326
+				)
+				)
+			</if>
+			AND ST_IsValid (geom)
+	    </trim>
+	</select>
+	<select id="getGlobalDataFromCircle" resultMap="BaseResultMap">
+		SELECT
+		st_area (
+		ST_Buffer (
+		ST_Transform (
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		),
+		26986
+		),
+		#{arg1},
+		'quad_segs=8'
+		)
+		) / (1000 * 1000) AS query_area,
+		ST_Area (
+		ST_GeographyFromText (
+		st_astext (
+		ST_Intersection (
+		ST_Union (geom),
+		ST_Transform (
+		ST_Buffer (
+		ST_Transform (
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		),
+		26986
+		),
+		#{arg1},
+		'quad_segs=8'
+		),
+		4326
+		)
+		)
+		)
+		)
+		) / (1000 * 1000) AS
+		intersection_area,
+		ST_Area (
+		ST_GeographyFromText
+		(st_astext(ST_Union(geom)))
+		) / (1000 * 1000) AS union_area,
+		st_astext
+		(ST_Union(geom)) AS geom_str,
+		COUNT (1)
+		FROM
+		ddss_metadata
+		WHERE
+		sensor =
+		#{arg2}
+		AND ST_Intersects (
+		geom,
+		ST_Transform (
+		ST_Buffer (
+		ST_Transform (
+		ST_GeomFromText (
+		#{arg0},
+		4326
+		),
+		26986
+		),
+		#{arg1},
+		'quad_segs=8'
+		),
+		4326
+		)
+		);
+	</select>
+
+	<select id="getGlobal" resultMap="BaseResultMap" parameterType="com.sinosoft.ddss.common.entity.Additional">
+		SELECT
+		st_area (
+		ST_GeographyFromText (
+		#{aoi}
+		)
+		) / (1000 * 1000) AS query_area,
+		ST_Area
+		(
+		ST_GeographyFromText (
+		st_astext (
+		ST_Intersection (
+		ST_Union
+		(geom),
+		ST_GeomFromText (
+		#{aoi},
+		4326
+		)
+		)
+		)
+		)
+		) / (1000 * 1000) AS
+		intersection_area,
+		ST_Area (
+		ST_GeographyFromText
+		(st_astext(ST_Union(geom)))
+		) / (1000 * 1000) AS
+		union_area,
+		st_astext
+		(ST_Union(geom)) AS geom_str,
+		COUNT (1)
+		FROM
+		ddss_metadata
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+	    	<if test="satellite != null and satellite != ''">
+				AND satellite = #{satellite}
+			</if>
+			<if test="sensor != null and sensor != ''">
+				AND sensor = #{sensor}
+			</if>
+			<if test="startTime != null and startTime != ''">
+			AND to_timestamp(#{startTime}, 'yyyy-mm-dd HH24:mi:ss') &lt;=
+			image_start_time
+			</if>
+			<if test="endTime != null and endTime != ''">
+				AND to_timestamp(#{endTime}, 'yyyy-mm-dd HH24:mi:ss') &gt;=
+				image_end_time
+			</if>
+			<if test="aoi != null and aoi != ''">
+				AND ST_Intersects (
+				geoms,
+				st_geometryfromtext (
+				#{aoi},
+				4326
+				)
+				)
+			</if>
+			AND ST_IsValid (geom)
+	    </trim>
+	</select>
+	
+	<select id="getDistrictByName" resultType="java.lang.String" parameterType="com.sinosoft.ddss.model.QueryCollection">
+		SELECT
+		st_astext (geom) AS geomstr
+		FROM
+		<choose>
+			<when test="type=='city'">
+				city D
+			</when>
+			<when test="type=='town'">
+				town D
+			</when>
+			<when test="type=='province'">
+				province D
+			</when>
+			<when test="type=='places'">
+				places D
+			</when>
+			<when test="type=='world'">
+				world D
+			</when>
+			<otherwise>
+				world D
+			</otherwise>
+		</choose>
+		WHERE
+		name_chn = #{cityName} LIMIT 1 OFFSET 0;
+	</select>
+	
+	<select id="getDistrictListByName" resultType="java.util.HashMap" parameterType="com.sinosoft.ddss.model.QueryCollection">
+		SELECT
+		name_chn AS name
+		FROM
+		<choose>
+			<when test="type=='city'">
+				city D
+			</when>
+			<when test="type=='town'">
+				town D
+			</when>
+			<when test="type=='province'">
+				province D
+			</when>
+			<when test="type=='places'">
+				places D
+			</when>
+			<when test="type=='world'">
+				world D
+			</when>
+			<otherwise>
+				world D
+			</otherwise>
+		</choose>
+		WHERE
+		name_chn LIKE '%${cityName}%'
+		ORDER BY name_chn
+	</select>
+	
+	<select id="getPlacesByName" resultMap="ResultPlaceMap" parameterType="com.sinosoft.ddss.model.QueryCollection">
+		SELECT
+		<include refid="BasePlace" />
+		FROM
+		<choose>
+			<when test="type=='city'">
+				city D
+			</when>
+			<when test="type=='town'">
+				town D
+			</when>
+			<when test="type=='province'">
+				province D
+			</when>
+			<when test="type=='places'">
+				places D
+			</when>
+			<when test="type=='world'">
+				world D
+			</when>
+			<otherwise>
+				province D
+			</otherwise>
+		</choose>
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="cityName != null and cityName != ''">
+				AND name_chn like '${cityName}' || '%'
+			</if>
+	    </trim>
+			order by D.name_chn
+	</select>
+	
+	
+	<update id="updateIsDeleteById" parameterType="Map">
+	update 
+		ddss_metadata 
+			set is_delete = #{isDelete}
+		where
+			id in (${ids})
+	
+	</update>
+	
+	
+</mapper>
